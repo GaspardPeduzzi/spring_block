@@ -12,7 +12,7 @@ import (
 
 var lastLedger = 51366888
 
-func GetLedgerData(addr *string, indexLedger int) []Transaction{
+func GetLedgerData(addr *string, indexLedger int) []Transaction {
 	flag.Parse()
 	log.SetFlags(0)
 	// check for interrupts and cleanly close the connection

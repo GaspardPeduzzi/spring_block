@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	display "github.com/gaspardpeduzzi/spring_block/display"
-	"log"
 )
 
 func main() {
@@ -17,11 +16,18 @@ func main() {
 	display.Init()
 
 	c := make(chan int)
+
+
+
 	liquidOptimizer := NewOptimizer(*addr, c)
-	go liquidOptimizer.ConstructTxGraph()
+	liquidOptimizer.NConstructTxGraph()
 
 
 
+
+
+
+		/*
 		for {
 			display.DisplayVerbose("waiting for next block...")
 			<-c
@@ -40,6 +46,6 @@ func main() {
 				log.Println("====================================================================================")
 				//return
 			}
-		}
+		}*/
 
 }

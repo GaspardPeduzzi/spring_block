@@ -1,7 +1,6 @@
 package graph
 
 import (
-	"log"
 	"math"
 	"sort"
 	"sync"
@@ -14,7 +13,9 @@ var capacityList = 0
 // Graph : Data structure for graph of offers
 type Graph struct {
 	Graph map[string]map[string]*TxList
-	ActiveOffers 	 map[string]*Offer
+
+	NGraph map[string]map[string]*OrderBook
+	AccountRoots map[string]map[int]*Offer
 	Lock  sync.RWMutex
 }
 
@@ -25,44 +26,106 @@ type SimplerGraph struct {
 	Lock       sync.Mutex
 }
 
+type OrderBook struct {
+	List []*Offer
+	Pay string
+	WillGet string
+	//numberOfTransactions int
+}
+
+func (ng *Graph) insertNewOffer(offer *Offer){
+	//graph BTC ETH donne offerCreate pour obtenir ETH en payant BTC
+	//TODO: check if correct here for the A to B "policy"
+	ng.initNGraph(offer.CreatorWillPay, offer.CreatorWillGet)
+	ng.Lock.Lock()
+	ng.NGraph[offer.CreatorWillPay][offer.CreatorWillGet].List = append(ng.NGraph[offer.CreatorWillPay][offer.CreatorWillGet].List, offer)
+	ng.Lock.Unlock()
+}
+
+
+
+/*
+func (ng *Graph) deleteOffer(offer *Offer){
+
+	if ng.AccountRoots[offer.Account] == nil {
+		display.DisplayVerbose("We are done since we haven't seen this guy yet")
+	} else if ng.AccountRoots[offer.Account][offer.SequenceNumber] == nil {
+		display.DisplayVerbose("DELETING ====================================================================================")
+		for k, _ := range ng.AccountRoots[offer.Account] {
+			display.DisplayVerbose(k)
+		}
+		display.DisplayVerbose("====================================================================================")
+
+		//display.DisplayVerbose("We are done since we haven't seen this guy with this number sequence yet")
+	} else if ng.AccountRoots[offer.Account][offer.SequenceNumber] != nil  {
+		log.Println("ACTUALLY DELETED?")
+
+		//display.DisplayVerbose(ng.Graph[offer.CreatorWillPay][offer.CreatorWillGet])
+		ng.AccountRoots[offer.Account][offer.SequenceNumber] = nil
+	}
+
+	//log.Println("DELETED previous offer from", offer.Account, "with seq #", offer.SequenceNumber)
+
+}*/
+
+
+func (ng *Graph) insertNewOfferToAccount(offer *Offer) {
+	if ng.AccountRoots[offer.Account] == nil {
+		ng.AccountRoots[offer.Account] = make(map[int]*Offer)
+	} else if ng.AccountRoots[offer.Account][offer.SequenceNumber] == nil {
+		ng.AccountRoots[offer.Account][offer.SequenceNumber] = offer
+	}
+}
+
+
+
+
 // TxList : Data structure for list of offers
 type TxList struct {
 	List []*Offer
 }
 
+
+//graph BTC ETH gives offerCreate pour obtenir ETH en payant BTC
 // Offer : Data structure for an offer
 type Offer struct {
-	XrpTx  data.Transaction
-	Rate   float64
-	Volume float64
-	Hash   string
-	Pay    string
-	Get    string
-	Active bool
+	//Indexing
+	XrpTx    		  data.Transaction
+	TxHash   		  string
+	Account  		  string
+	SequenceNumber 	  int
+
+	//Actual transaction data
+	Rate   			  float64
+	Quantity 		  float64
+	CreatorWillPay    string
+	CreatorWillGet    string
+	Issuer			  string
 }
 
-func (graph *Graph) addNewOffer(pay string, get string, offer *Offer) {
-	graph.initGraph(pay, get)
-	graph.Lock.Lock()
-	graph.Graph[pay][get].List = append(graph.Graph[pay][get].List, offer)
-	graph.Lock.Unlock()
 
-}
 
-func (graph *Graph) initGraph(pay string, get string) {
+func (graph *Graph) initNGraph(pay string, get string) {
 	graph.Lock.Lock()
-	if graph.Graph[pay] == nil {
-		graph.Graph[pay] = make(map[string]*TxList)
+
+	if graph.NGraph[pay] == nil {
+		graph.NGraph[pay] = make(map[string]*OrderBook)
+		if graph.NGraph[pay][get] == nil {
+			txlist := make([]*Offer, capacityList)
+			init := OrderBook{List: txlist, Pay: pay, WillGet: get}
+			graph.NGraph[pay][get] = &init
+		}
+	} else if graph.NGraph[pay][get] == nil {
 		txlist := make([]*Offer, capacityList)
-		init := TxList{List: txlist}
-		graph.Graph[pay][get] = &init
-	} else if graph.Graph[pay][get] == nil {
-		txlist := make([]*Offer, capacityList)
-		init := TxList{List: txlist}
-		graph.Graph[pay][get] = &init
+		init := OrderBook{List: txlist, Pay: pay, WillGet: get}
+		graph.NGraph[pay][get] = &init
+
 	}
 	graph.Lock.Unlock()
 }
+
+
+
 
 // CreateSimpleGraph : function for creating a SimpleGraph
 func (graph *Graph) CreateSimpleGraph() SimplerGraph {
@@ -91,23 +154,8 @@ func (graph *Graph) CreateSimpleGraph() SimplerGraph {
 }
 
 
-func (graph *Graph) DeleteOffers(transactions []string){
-	for _, tx := range transactions {
-		graph.Lock.Lock()
-		offer := graph.ActiveOffers[tx]
-		for i, v  := range graph.Graph[offer.Pay][offer.Get].List {
-			log.Println(i)
-			if v.Hash == offer.Hash {
-				v = nil
-				log.Println("DELETED OFFER")
-			}
-		}
-		if len(graph.Graph[offer.Pay][offer.Get].List) == 0 {
-			graph.Graph[offer.Pay][offer.Get] = nil
-		}
-		graph.Lock.Unlock()
-	}
-}
+
+
 
 func (graph *Graph) getCurrenciesList() []string {
 	currencies := make([]string, len(graph.Graph))
@@ -130,12 +178,57 @@ func (graph *Graph) SortGraphWithTxs() {
 			sort.Slice(list, func(i, j int) bool {
 				return v2.List[i].Rate > v2.List[j].Rate
 			})
-
 			//sortedGraph[k1][k2] = &TxList{List: list}
 			copy(graph.Graph[k1][k2].List, list)
-
 		}
 	}
-
-	//return Graph{Graph: sortedGraph, Lock: graph.Lock}
 }
+
+
+
+
+func (graph *Graph) addNewOffer(pay string, get string, offer *Offer) {
+	graph.initGraph(pay, get)
+	graph.Lock.Lock()
+	graph.Graph[pay][get].List = append(graph.Graph[pay][get].List, offer)
+	graph.Lock.Unlock()
+
+}
+
+
+func (graph *Graph) initGraph(pay string, get string) {
+	graph.Lock.Lock()
+	if graph.Graph[pay] == nil {
+		graph.Graph[pay] = make(map[string]*TxList)
+		txlist := make([]*Offer, capacityList)
+		init := TxList{List: txlist}
+		graph.Graph[pay][get] = &init
+	} else if graph.Graph[pay][get] == nil {
+		txlist := make([]*Offer, capacityList)
+		init := TxList{List: txlist}
+		graph.Graph[pay][get] = &init
+	}
+	graph.Lock.Unlock()
+}
+
+
+
+/*
+func (graph *Graph) DeleteOffers(transactions []string){
+	for _, tx := range transactions {
+		graph.Lock.Lock()
+		offer := graph.ActiveOffers[tx]
+		for i, v  := range graph.Graph[offer.Pay][offer.Get].List {
+			log.Println(i)
+			if v.Hash == offer.Hash {
+				v = nil
+				log.Println("DELETED OFFER")
+			}
+		}
+		if len(graph.Graph[offer.Pay][offer.Get].List) == 0 {
+			graph.Graph[offer.Pay][offer.Get] = nil
+		}
+		graph.Lock.Unlock()
+	}
+}*/
+

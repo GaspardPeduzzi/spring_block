@@ -9,9 +9,9 @@ import (
 	"github.com/gaspardpeduzzi/spring_block/graph"
 )
 
-var smallCap = 1000
-var maxCap = 1000000
+
 var oldestIndex = 0
+
 
 type Optimizer struct {
 	Endpoint string
@@ -21,52 +21,47 @@ type Optimizer struct {
 
 func NewOptimizer(endpoint string, c chan int) *Optimizer {
 	graph := graph.Graph{
-		Graph: make(map[string]map[string]*graph.TxList),
-		ActiveOffers: make(map[string]*graph.Offer),
+		NGraph: make(map[string]map[string]*graph.OrderBook),
+		AccountRoots: make(map[string]map[int]*graph.Offer),
 		Lock:  sync.RWMutex{},
 	}
 	return &Optimizer{endpoint, graph, c}
 }
 
-func (lo *Optimizer) ConstructTxGraph() {
 
+func (lo *Optimizer) NConstructTxGraph() {
 	lastIndex := data.GetLastLedgerSeq(&lo.Endpoint)
-
 	if lastIndex > oldestIndex {
+		display.DisplayVerbose("New block index: ", lastIndex)
 		oldestIndex = lastIndex
 		txs := data.GetLedgerData(&lo.Endpoint, lastIndex)
 		var tmpCreate []data.Transaction
-		var tmpCancel []data.Transaction
-		var tmpPay []data.Transaction
-
-		for _, v := range txs {
-			if v.TransactionType == "OfferCreate" {
-				//display.DisplayVerbose(v.Hash, v.TransactionType)
-				tmpCreate = append(tmpCreate, v)
-			} else if v.TransactionType == "OfferCancel" {
-				tmpCancel = append(tmpCancel, v)
-			} else if v.TransactionType == "Payment" {
-				tmpPay = append(tmpPay, v)
+		for _, tx := range txs {
+			if tx.TransactionType == "OfferCreate" {
+				tmpCreate = append(tmpCreate, tx)
+			} else if tx.TransactionType == "OfferCancel" {
+				tmpCreate = append(tmpCreate, tx)
 			}
 		}
-		lo.parseTransactions(tmpCreate)
-		if len(tmpCancel) != 0 {
-			lo.parseTransactionsCancel(tmpCancel)
-		}
-		lo.parsePay(tmpPay)
+		lo.ParseOfferCreateTransactions(tmpCreate)
 
-		lo.Channel <- 1
-		lo.ConstructTxGraph()
+
+		//lo.Channel <- 1
+		lo.NConstructTxGraph()
 	}
-	lo.ConstructTxGraph()
-
+	lo.NConstructTxGraph()
 }
 
 
-func (lo *Optimizer) parsePay(transactions []data.Transaction){
-	log.Println("ADDED", len(transactions), " Payment transaction(s)")
 
+func (lo *Optimizer) ParseOfferCreateTransactions(transactions []data.Transaction) {
+	log.Println("ADDED", len(transactions), " OfferCreate transaction(s)")
+	for _, tx := range transactions {
+		lo.Graph.ParseOfferCreate(tx)
+	}
+	//lo.Graph.SortGraphWithTxs()
 }
+
 
 func (lo *Optimizer) parseTransactionsCancel(transactions []data.Transaction) {
 	display.DisplayVerbose("ADDED", len(transactions), " OfferCancel transaction(s)")
@@ -87,15 +82,16 @@ func (lo *Optimizer) parseTransactionsCancel(transactions []data.Transaction) {
 	}
 	if deleted[0] != "" {
 		display.DisplayVerbose("DELETING OFFERS")
-		lo.Graph.DeleteOffers(deleted)
+		//lo.Graph.DeleteOffers(deleted)
 	}
 
 }
 
-func (lo *Optimizer) parseTransactions(transactions []data.Transaction) {
-	display.DisplayVerbose("ADDED", len(transactions), " OfferCreate transaction(s)")
-	for _, tx := range transactions {
-		lo.Graph.AddOffers(tx)
-	}
-	lo.Graph.SortGraphWithTxs()
+
+
+
+
+func (lo *Optimizer) parsePay(transactions []data.Transaction){
+	log.Println("ADDED", len(transactions), " Payment transaction(s)")
+
 }

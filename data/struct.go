@@ -30,43 +30,38 @@ type LedgerResponseExpanded struct {
 	Type   string `json:"type"`
 }
 
-type Transaction struct {
-	Account            string `json:"Account"`
-	Fee                string `json:"Fee"`
-	Flags              int    `json:"Flags"`
-	LastLedgerSequence int    `json:"LastLedgerSequence,omitempty"`
-	OfferSequence      int    `json:"OfferSequence,omitempty"`
-	Sequence           int    `json:"Sequence"`
-	SigningPubKey      string `json:"SigningPubKey"`
-	TakerGets         interface{}
-	TakerPays       interface{} `json:"TakerPays,omitempty"`
-	TransactionType string `json:"TransactionType"`
-	TxnSignature    string `json:"TxnSignature"`
-	Hash            string `json:"hash"`
-	MetaData        struct {
-		AffectedNodes  []struct {
-		CreatedNode struct {
-		LedgerEntryType string `json:"LedgerEntryType"`
-		LedgerIndex     string `json:"LedgerIndex"`
-		NewFields       struct {
-		Account       string `json:"Account"`
-		BookDirectory string `json:"BookDirectory"`
-		Sequence      int    `json:"Sequence"`
-		TakerGets     interface{}
-		TakerPays interface{} `json:"TakerPays"`
-	} `json:"NewFields"`
-	} `json:"CreatedNode,omitempty"`
-		ModifiedNode struct {
-		FinalFields struct {
-		Flags     int    `json:"Flags"`
-		Owner     string `json:"Owner"`
-		RootIndex string `json:"RootIndex"`
+type ModifiedNode struct {
+	FinalFields struct {
+	Flags     int    `json:"Flags"`
+	Owner     string `json:"Owner"`
+	RootIndex string `json:"RootIndex"`
 	} `json:"FinalFields"`
-		LedgerEntryType string `json:"LedgerEntryType"`
-		LedgerIndex     string `json:"LedgerIndex"`
-	} `json:"ModifiedNode,omitempty"`
-		DeletedNode struct {
-		FinalFields struct {
+	LedgerEntryType string `json:"LedgerEntryType"`
+	LedgerIndex     string `json:"LedgerIndex"`
+}
+
+
+type DeletedNode struct {
+	FinalFields struct {
+		Account           string `json:"Account"`
+		BookDirectory     string `json:"BookDirectory"`
+		BookNode          string `json:"BookNode"`
+		Expiration        int    `json:"Expiration"`
+		Flags             int    `json:"Flags"`
+		OwnerNode         string `json:"OwnerNode"`
+		PreviousTxnID     string `json:"PreviousTxnID"`
+		PreviousTxnLgrSeq int    `json:"PreviousTxnLgrSeq"`
+		Sequence          int    `json:"Sequence"`
+		TakerGets         interface{} `json:"TakerGets"`
+		TakerPays         interface{} `json:"TakerPays"`
+	} `json:"FinalFields"`
+	LedgerEntryType string `json:"LedgerEntryType"`
+	LedgerIndex     string `json:"LedgerIndex"`
+}
+
+/*
+type DeletedNode struct {
+	FinalFields struct {
 		ExchangeRate      string `json:"ExchangeRate"`
 		Flags             int    `json:"Flags"`
 		RootIndex         string `json:"RootIndex"`
@@ -76,31 +71,21 @@ type Transaction struct {
 		TakerPaysIssuer   string `json:"TakerPaysIssuer"`
 		PreviousTxnID	  string  `json:"PreviousTxnID"`
 	} `json:"FinalFields"`
-		LedgerEntryType string `json:"LedgerEntryType"`
-		LedgerIndex     string `json:"LedgerIndex"`
-	} `json:"DeletedNode,omitempty"`
-	} `json:"AffectedNodes"`
-		TransactionIndex  int    `json:"TransactionIndex"`
-		TransactionResult string `json:"TransactionResult"`
-	} `json:"metaData"`
-	Amount interface{} `json:"Amount,omitempty"`
-	Destination string `json:"Destination,omitempty"`
-	Paths       [][]struct {
-		Currency string `json:"currency"`
-		Issuer   string `json:"issuer,omitempty"`
-		Type     int    `json:"type"`
-		TypeHex  string `json:"type_hex"`
-	} `json:"Paths,omitempty"`
-	SendMax    interface{} `json:"SendMax,omitempty"`
-	Expiration int    `json:"Expiration,omitempty"`
-	Memos      []struct {
-		Memo struct {
-			MemoData   string `json:"MemoData"`
-			MemoFormat string `json:"MemoFormat"`
-			MemoType   string `json:"MemoType"`
-		} `json:"Memo"`
-	} `json:"Memos,omitempty"`
-	DestinationTag int `json:"DestinationTag,omitempty"`
+	LedgerEntryType string `json:"LedgerEntryType"`
+	LedgerIndex     string `json:"LedgerIndex"`
+}*/
+
+
+type CreatedNode struct {
+	LedgerEntryType string `json:"LedgerEntryType"`
+	LedgerIndex     string `json:"LedgerIndex"`
+	NewFields       struct {
+		Account       string `json:"Account"`
+		BookDirectory string `json:"BookDirectory"`
+		Sequence      int    `json:"Sequence"`
+		TakerGets     interface{}
+		TakerPays interface{} `json:"TakerPays"`
+	} `json:"NewFields"`
 }
 
 type LedgerSeqRequest struct {

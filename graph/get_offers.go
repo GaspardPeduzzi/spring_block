@@ -38,7 +38,7 @@ func (graph *Graph) GetProfitableOffers() (map[int][]Offer, []string) {
 
 		edge := edges.List[0]
 		// Update total quantities for that edge
-		quantities[i] = edge.Volume
+		quantities[i] = edge.Quantity
 		// Remove used edge from graph
 		graph.Graph[cycle[i]][cycle[(i+1)%cycle_count]].List = graph.Graph[cycle[i]][cycle[(i+1)%cycle_count]].List[1:]
 		// Update selected edges
@@ -92,7 +92,7 @@ func (graph *Graph) GetProfitableOffers() (map[int][]Offer, []string) {
 		}
 
 		if product > 1 {
-			quantities[bottleneck_edge] += next_edge.Volume
+			quantities[bottleneck_edge] += next_edge.Quantity
 			res[bottleneck_edge] = append(res[bottleneck_edge], *next_edge)
 		} else {
 			return res, cycle
