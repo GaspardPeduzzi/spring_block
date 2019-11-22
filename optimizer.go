@@ -34,15 +34,22 @@ func (lo *Optimizer) ConstructTxGraph() {
 		oldestIndex = lastIndex
 		txs := data.GetLedgerData(&lo.Endpoint, lastIndex)
 		var tmpCreate []data.Transaction
+		var tmpCancel []data.Transaction
 		var tmpPayment []data.Transaction
 		for _, tx := range txs {
-			if tx.TransactionType == "OfferCreate" || tx.TransactionType == "OfferCancel"{
+			if tx.TransactionType == "OfferCreate" {
 				tmpCreate = append(tmpCreate, tx)
 			} else if tx.TransactionType == "Payment" {
 				tmpPayment = append(tmpPayment, tx)
+			} else if tx.TransactionType == "OfferCancel" {
+				tmpCancel = append(tmpCancel, tx)
 			}
 		}
-		lo.ParseOfferCreateTransactions(tmpCreate)
+		display.DisplayVerbose("ADDED", len(tmpCreate), "OfferCreate transaction(s)")
+		display.DisplayVerbose("ADDED", len(tmpCancel), "OfferCancel transaction(s)")
+		display.DisplayVerbose("ADDED", len(tmpPayment), "payment transaction(s)")
+
+		lo.ParseOfferCreateTransactions(append(tmpCreate, tmpCancel...))
 		lo.ParsePaymentTransactions(tmpPayment)
 		lo.Channel <- 1
 		lo.ConstructTxGraph()
@@ -51,7 +58,7 @@ func (lo *Optimizer) ConstructTxGraph() {
 }
 
 func (lo *Optimizer) ParseOfferCreateTransactions(transactions []data.Transaction) {
-	display.DisplayVerbose("ADDED", len(transactions), "OfferCreate and OfferCancel transaction(s)")
+
 	for _, tx := range transactions {
 		lo.Graph.ParseTransaction(tx)
 	}
@@ -60,7 +67,6 @@ func (lo *Optimizer) ParseOfferCreateTransactions(transactions []data.Transactio
 }
 
 func (lo *Optimizer) ParsePaymentTransactions(transactions []data.Transaction) {
-		display.DisplayVerbose("ADDED", len(transactions), "new payment transaction(s)")
 		for _, tx := range transactions {
 			lo.Graph.PaymentTransactionParse(tx)
 		}
