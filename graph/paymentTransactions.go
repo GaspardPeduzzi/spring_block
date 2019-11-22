@@ -1,30 +1,29 @@
 package graph
 
 import (
+	"log"
+
 	"github.com/gaspardpeduzzi/spring_block/data"
 	"github.com/gaspardpeduzzi/spring_block/display"
-	"log"
 )
 
 func (graph *Graph) PaymentTransactionParse(tx data.Transaction) (newOffers []Offer) {
 
-	if len(tx.Paths)>0 &&  tx.MetaData.TransactionResult != "tesSUCCESS" {
+	if len(tx.Paths) > 0 && tx.MetaData.TransactionResult != "tesSUCCESS" {
 		display.DisplayAnalysis("====================================================================================")
 		display.DisplayAnalysis("Parsing PAYMENT tx", tx.Hash, "transaction status", tx.MetaData.TransactionResult)
 		display.DisplayAnalysis("FOUND PATHS")
 		display.DisplayAnalysis("PATHS in transactions", len(tx.Paths))
 		for k, v := range tx.Paths {
-			for i,j := range v {
-				display.DisplayAnalysis(k,i, v, j)
+			for i, j := range v {
+				display.DisplayAnalysis(k, i, v, j)
 			}
 		}
-
 
 		display.DisplayAnalysis(tx.TakerGets)
 		display.DisplayAnalysis(tx.TakerPays)
 		display.DisplayAnalysis("====================================================================================")
 	}
-
 
 	resultingOffers := make([]Offer, 1)
 
@@ -69,19 +68,16 @@ func (graph *Graph) PaymentTransactionParse(tx data.Transaction) (newOffers []Of
 					CreatorWillPay: currency,
 					CreatorWillGet: currency1,
 					Issuer:         actualIssuer,
-
 				}
-				if ! graph.Issuers[newOffer.Issuer] {
+				if !graph.Issuers[newOffer.Issuer] {
 					graph.Issuers[newOffer.Issuer] = true
-					display.DisplayAnalysis("NEW ISSUER: ", newOffer.Issuer, "TRACK ISSUERS: ",  len(graph.Issuers))
+					display.DisplayAnalysis("NEW ISSUER: ", newOffer.Issuer, "TRACK ISSUERS: ", len(graph.Issuers))
 				}
-
 
 				graph.insertNewOffer(newOffer)
 			}
 
 		} else if m {
-
 
 			if v.DeletedNode.LedgerEntryType == "Offer" {
 				display.DisplayVerbose("MODIFIED NODE OFFER", v.ModifiedNode.LedgerEntryType)
@@ -115,13 +111,12 @@ func (graph *Graph) PaymentTransactionParse(tx data.Transaction) (newOffers []Of
 					Issuer:         issuerTG,
 				}
 
-
 				//deletedOffers = append(deletedOffers, offer)
 				if graph.Graph[offer.CreatorWillPay][offer.CreatorWillGet] != nil {
 					for k, v := range graph.Graph[offer.CreatorWillPay][offer.CreatorWillGet].List {
 						if v.Account == account && v.SequenceNumber == seq {
-							removeOffer(graph.Graph[offer.CreatorWillPay][offer.CreatorWillGet].List,k)
-							log.Println("DELETED")
+							removeOffer(graph.Graph[offer.CreatorWillPay][offer.CreatorWillGet].List, k)
+							log.Println("Order book adjusted")
 
 						}
 					}
@@ -137,4 +132,3 @@ func (graph *Graph) PaymentTransactionParse(tx data.Transaction) (newOffers []Of
 	return resultingOffers
 
 }
-

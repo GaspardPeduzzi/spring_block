@@ -2,8 +2,8 @@ package graph
 
 import (
 	"fmt"
-	"math"
 	"log"
+	"math"
 )
 
 func CheckProfitable(edges map[int][]Offer) bool {
@@ -31,7 +31,6 @@ func (graph *Graph) GetProfitableOffers() (map[int][]Offer, []string) {
 		return nil, nil
 	}
 
-
 	// Make a copy of the graph
 	res := make(map[int][]Offer)
 	quantities := make(map[int]float64)
@@ -47,7 +46,7 @@ func (graph *Graph) GetProfitableOffers() (map[int][]Offer, []string) {
 			log.Println(cycle, cycle[i], cycle[(i+1)%cycle_count], edges)
 			log.Println("simple", simpleGraph.Graph[cycle[i]][cycle[(i+1)%cycle_count]])
 			//panic("Should never happen")
-			log.Println("PANIC should never happen")
+			//log.Println("PANIC should never happen")
 		}
 
 		edge := edges.List[0]
@@ -61,9 +60,9 @@ func (graph *Graph) GetProfitableOffers() (map[int][]Offer, []string) {
 	}
 
 	if !CheckProfitable(res) {
-		log.Println("res", res)
+		//log.Println("res", res)
 		//panic("Positive cycle doesn't exist.")
-		log.Println("PANIC positive cycle does not exists")
+		//log.Println("PANIC positive cycle does not exists")
 	}
 
 	for true {
